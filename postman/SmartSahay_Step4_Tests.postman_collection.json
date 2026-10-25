@@ -1,0 +1,405 @@
+{
+  "info": {
+    "name": "SmartSahay - Step 4 Schemes API tests",
+    "description": "Run with the Collection Runner. Assumes 17 active schemes (delete the Step 8 demo scheme first).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/smartsahay"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. List all schemes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Content-Type is JSON\", function () { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"); });",
+              "const data = pm.response.json();",
+              "pm.test(\"Returns exactly 17 schemes\", function () { pm.expect(data).to.be.an(\"array\"); pm.expect(data.length).to.eql(17); });",
+              "pm.test(\"List items have no detail lists\", function () { pm.expect(data[0]).to.not.have.property(\"benefits\"); pm.expect(data[0]).to.not.have.property(\"steps\"); });",
+              "pm.test(\"First item has slug and name\", function () { pm.expect(data[0].slug).to.be.a(\"string\"); pm.expect(data[0].name).to.be.a(\"string\"); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes"
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Filter level=Central",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test(\"Returns exactly 10 schemes\", function () { pm.expect(data).to.be.an(\"array\"); pm.expect(data.length).to.eql(10); });",
+              "pm.test(\"All are Central\", function () { data.forEach(s => pm.expect(s.level).to.eql(\"Central\")); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes?level=Central",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes"
+          ],
+          "query": [
+            {
+              "key": "level",
+              "value": "Central"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Filter state=Karnataka",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test(\"Returns exactly 7 schemes\", function () { pm.expect(data).to.be.an(\"array\"); pm.expect(data.length).to.eql(7); });",
+              "pm.test(\"All are Karnataka\", function () { data.forEach(s => pm.expect(s.state).to.eql(\"Karnataka\")); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes?state=Karnataka",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes"
+          ],
+          "query": [
+            {
+              "key": "state",
+              "value": "Karnataka"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Filter category=Crop Insurance",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test(\"Returns exactly 2 schemes\", function () { pm.expect(data).to.be.an(\"array\"); pm.expect(data.length).to.eql(2); });",
+              "pm.test(\"Both are Crop Insurance\", function () { data.forEach(s => pm.expect(s.category).to.eql(\"Crop Insurance\")); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes?category=Crop%20Insurance",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes"
+          ],
+          "query": [
+            {
+              "key": "category",
+              "value": "Crop Insurance"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Two filters: Agricultural Credit + State",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test(\"Returns exactly 1 schemes\", function () { pm.expect(data).to.be.an(\"array\"); pm.expect(data.length).to.eql(1); });",
+              "pm.test(\"It is the zero-percent interest scheme\", function () { pm.expect(data[0].slug).to.eql(\"zero-percent-interest-agricultural-credit\"); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes?category=Agricultural%20Credit&level=State",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes"
+          ],
+          "query": [
+            {
+              "key": "category",
+              "value": "Agricultural Credit"
+            },
+            {
+              "key": "level",
+              "value": "State"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Detail: PM-KISAN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Content-Type is JSON\", function () { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\"); });",
+              "const s = pm.response.json();",
+              "pm.test(\"Is a single object, not an array\", function () { pm.expect(s).to.be.an(\"object\"); pm.expect(s.slug).to.eql(\"pm-kisan-income-support-scheme\"); });",
+              "pm.test(\"3 benefits\", function () { pm.expect(s.benefits.length).to.eql(3); });",
+              "pm.test(\"5 eligibility items\", function () { pm.expect(s.eligibility.length).to.eql(5); });",
+              "pm.test(\"3 documents\", function () { pm.expect(s.documents.length).to.eql(3); });",
+              "pm.test(\"4 steps\", function () { pm.expect(s.steps.length).to.eql(4); });",
+              "pm.test(\"Rupee sign displays correctly\", function () { pm.expect(s.benefits[0]).to.include(\"\\u20B96,000\"); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes/pm-kisan-income-support-scheme",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes",
+            "pm-kisan-income-support-scheme"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Unknown slug returns 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 404\", function () { pm.response.to.have.status(404); });",
+              "pm.test(\"Error message is correct\", function () { pm.expect(pm.response.json().error).to.eql(\"Scheme not found\"); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes/does-not-exist",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes",
+            "does-not-exist"
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. Filter with no matches (state=Kerala)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test(\"Returns exactly 0 schemes\", function () { pm.expect(data).to.be.an(\"array\"); pm.expect(data.length).to.eql(0); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes?state=Kerala",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes"
+          ],
+          "query": [
+            {
+              "key": "state",
+              "value": "Kerala"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "9. Hindi translation (lang=hi)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test(\"Returns exactly 17 schemes\", function () { pm.expect(data).to.be.an(\"array\"); pm.expect(data.length).to.eql(17); });",
+              "pm.test(\"First scheme name is in Hindi (Devanagari)\", function () { pm.expect(/[\\u0900-\\u097F]/.test(data[0].name)).to.be.true; });",
+              "pm.test(\"A scheme without translation falls back to English\", function () { pm.expect(/[A-Za-z]/.test(data[16].name)).to.be.true; });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes?lang=hi",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes"
+          ],
+          "query": [
+            {
+              "key": "lang",
+              "value": "hi"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "10. Invalid language (lang=xx) returns 400",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Error mentions lang\", function () { pm.expect(pm.response.json().error).to.include(\"lang\"); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/schemes?lang=xx",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "schemes"
+          ],
+          "query": [
+            {
+              "key": "lang",
+              "value": "xx"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "11. Health check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Database is UP with 17 schemes\", function () { const h = pm.response.json(); pm.expect(h.database).to.eql(\"UP\"); pm.expect(h.schemesCount).to.eql(17); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "health"
+          ]
+        }
+      }
+    }
+  ]
+}
