@@ -69,3 +69,17 @@
   .navbar-links { gap: 0.1rem; flex-wrap: wrap; }
   .navbar-links a { padding: 0.3rem 0.6rem; font-size: 0.85rem; }
 }
+.navbar-links {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 1rem;
+}
+
+.navbar-lang-item {
+  display: flex;
+  align-items: center;
+  margin-left: 0.5rem;
+}

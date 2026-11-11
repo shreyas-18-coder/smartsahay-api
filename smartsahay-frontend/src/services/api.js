@@ -5,11 +5,30 @@ function getToken() {
 }
 
 async function request(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...options.headers };
-  const token = getToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const headers = { ...options.headers };
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  // Only attach Content-Type if there is an outgoing request body
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  } catch (err) {
+    throw new ApiError('Unable to connect to SmartSahay server. Please check your connection.', 0);
+  }
+
+  // Auto-clear invalid or expired session token on 401
+  if (res.status === 401) {
+    sessionStorage.removeItem('ss_token');
+  }
+
   const contentType = res.headers.get('content-type') || '';
   const data = contentType.includes('application/json') ? await res.json() : null;
 
@@ -17,6 +36,7 @@ async function request(path, options = {}) {
     const msg = data?.error || `HTTP ${res.status}`;
     throw new ApiError(msg, res.status);
   }
+
   return data;
 }
 
@@ -48,23 +68,23 @@ export const getScheme = (slug, lang) => {
 
 // ─── Eligibility ─────────────────────────────────────────────────────────────
 export const checkEligibility = (body) =>
-  request('/api/eligibility', { method: 'POST', body: JSON.stringify(body) });
+    request('/api/eligibility', { method: 'POST', body: JSON.stringify(body) });
 
 // ─── Admin auth ──────────────────────────────────────────────────────────────
 export const adminLogin = (username, password) =>
-  request('/api/admin/login', {
-    method: 'POST',
-    body: JSON.stringify({ username, password }),
-  });
+    request('/api/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
 
 export const adminSession = () => request('/api/admin/session');
 
 // ─── Admin scheme CRUD ───────────────────────────────────────────────────────
 export const createScheme = (body) =>
-  request('/api/schemes', { method: 'POST', body: JSON.stringify(body) });
+    request('/api/schemes', { method: 'POST', body: JSON.stringify(body) });
 
 export const updateScheme = (slug, body) =>
-  request(`/api/schemes/${slug}`, { method: 'PUT', body: JSON.stringify(body) });
+    request(`/api/schemes/${slug}`, { method: 'PUT', body: JSON.stringify(body) });
 
 export const deactivateScheme = (slug) =>
-  request(`/api/schemes/${slug}`, { method: 'DELETE' });
+    request(`/api/schemes/${slug}`, { method: 'DELETE' });

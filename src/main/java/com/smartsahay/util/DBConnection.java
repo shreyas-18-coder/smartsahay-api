@@ -9,17 +9,37 @@ import java.util.Properties;
 
 public class DBConnection {
 
-    private static final Properties props = new Properties();
+    private static String url;
+    private static String user;
+    private static String password;
 
     static {
-        try (InputStream in = DBConnection.class.getClassLoader()
-                .getResourceAsStream("db.properties")) {
-            if (in == null) {
-                throw new IllegalStateException("db.properties not found in src/main/resources");
-            }
-            props.load(in);
+        try {
+            // Register MySQL JDBC Driver
             Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (IOException | ClassNotFoundException e) {
+
+            // 1. Try reading from Cloud Environment Variables (for Render / Docker)
+            url = System.getenv("DB_URL");
+            user = System.getenv("DB_USER");
+            password = System.getenv("DB_PASSWORD");
+
+            // 2. Fallback to local db.properties if environment variables are not set (for Localhost / IntelliJ)
+            if (url == null || url.isBlank()) {
+                Properties props = new Properties();
+                try (InputStream in = DBConnection.class.getClassLoader()
+                        .getResourceAsStream("db.properties")) {
+                    if (in != null) {
+                        props.load(in);
+                        url = props.getProperty("db.url");
+                        user = props.getProperty("db.user");
+                        password = props.getProperty("db.password");
+                    } else {
+                        throw new IllegalStateException(
+                                "Database configuration missing: Neither environment variables (DB_URL, DB_USER, DB_PASSWORD) nor db.properties were found.");
+                    }
+                }
+            }
+        } catch (ClassNotFoundException | IOException e) {
             throw new ExceptionInInitializerError(e);
         }
     }
@@ -27,9 +47,9 @@ public class DBConnection {
     private DBConnection() { }
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(
-                props.getProperty("db.url"),
-                props.getProperty("db.user"),
-                props.getProperty("db.password"));
+        if (url == null || url.isBlank()) {
+            throw new SQLException("Database connection URL is not configured.");
+        }
+        return DriverManager.getConnection(url, user, password);
     }
 }

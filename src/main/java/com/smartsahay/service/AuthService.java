@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class AuthService {
 
-    public static final long TOKEN_TTL_SECONDS = 2 * 60 * 60;
+    public static final long TOKEN_TTL_SECONDS = 2L * 60 * 60; // 2 hours
 
     private static final Map<String, Long> TOKENS = new ConcurrentHashMap<>();
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -20,19 +20,32 @@ public final class AuthService {
     private static final String ADMIN_PASSWORD;
 
     static {
-        Properties props = new Properties();
-        try (InputStream in = AuthService.class.getClassLoader().getResourceAsStream("db.properties")) {
-            if (in == null) {
-                throw new IllegalStateException("db.properties not found in src/main/resources");
+        // 1. Try reading from environment variables (Render / Cloud deployment)
+        String envUser = System.getenv("ADMIN_USERNAME");
+        String envPass = System.getenv("ADMIN_PASSWORD");
+
+        if (envUser != null && !envUser.isBlank() && envPass != null && !envPass.isBlank()) {
+            ADMIN_USER = envUser.trim();
+            ADMIN_PASSWORD = envPass.trim();
+        } else {
+            // 2. Fallback to local db.properties (IntelliJ / Localhost)
+            Properties props = new Properties();
+            try (InputStream in = AuthService.class.getClassLoader().getResourceAsStream("db.properties")) {
+                if (in != null) {
+                    props.load(in);
+                    ADMIN_USER = props.getProperty("admin.username");
+                    ADMIN_PASSWORD = props.getProperty("admin.password");
+                } else {
+                    throw new IllegalStateException(
+                            "Admin credentials missing: Neither environment variables (ADMIN_USERNAME, ADMIN_PASSWORD) nor db.properties were found.");
+                }
+            } catch (IOException e) {
+                throw new ExceptionInInitializerError(e);
             }
-            props.load(in);
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-        ADMIN_USER = props.getProperty("admin.username");
-        ADMIN_PASSWORD = props.getProperty("admin.password");
-        if (ADMIN_USER == null || ADMIN_USER.isBlank() || ADMIN_PASSWORD == null || ADMIN_PASSWORD.isBlank()) {
-            throw new IllegalStateException("admin.username and admin.password must be set in db.properties");
+
+            if (ADMIN_USER == null || ADMIN_USER.isBlank() || ADMIN_PASSWORD == null || ADMIN_PASSWORD.isBlank()) {
+                throw new IllegalStateException("admin.username and admin.password must be set in db.properties");
+            }
         }
     }
 
@@ -54,7 +67,7 @@ public final class AuthService {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        TOKENS.put(token, now + TOKEN_TTL_SECONDS * 1000);
+        TOKENS.put(token, now + (TOKEN_TTL_SECONDS * 1000L));
         return token;
     }
 
