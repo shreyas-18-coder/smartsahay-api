@@ -57,8 +57,15 @@ public class SchemeServlet extends HttpServlet {
                 }
             }
         } catch (SQLException e) {
-            getServletContext().log("Failed to load schemes", e);
-            JsonUtil.error(resp, 500, "Internal server error");
+            System.err.println("=== SQL ERROR IN SchemeServlet.doGet ===");
+            e.printStackTrace();
+            getServletContext().log("Failed to load schemes: " + e.getMessage(), e);
+            JsonUtil.error(resp, 500, "SQL Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("=== UNEXPECTED ERROR IN SchemeServlet.doGet ===");
+            e.printStackTrace();
+            getServletContext().log("Unexpected error loading schemes: " + e.getMessage(), e);
+            JsonUtil.error(resp, 500, "Unexpected Error: " + e.getMessage());
         }
     }
 
@@ -90,8 +97,14 @@ public class SchemeServlet extends HttpServlet {
         } catch (SQLIntegrityConstraintViolationException e) {
             JsonUtil.error(resp, 409, "A scheme with this slug already exists");
         } catch (SQLException e) {
-            getServletContext().log("Failed to create scheme", e);
-            JsonUtil.error(resp, 500, "Internal server error");
+            System.err.println("=== SQL ERROR IN SchemeServlet.doPost ===");
+            e.printStackTrace();
+            getServletContext().log("Failed to create scheme: " + e.getMessage(), e);
+            JsonUtil.error(resp, 500, "SQL Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("=== UNEXPECTED ERROR IN SchemeServlet.doPost ===");
+            e.printStackTrace();
+            JsonUtil.error(resp, 500, "Unexpected Error: " + e.getMessage());
         }
     }
 
@@ -127,8 +140,14 @@ public class SchemeServlet extends HttpServlet {
             }
             JsonUtil.send(resp, 200, dao.findBySlug(slug, null));
         } catch (SQLException e) {
-            getServletContext().log("Failed to update scheme", e);
-            JsonUtil.error(resp, 500, "Internal server error");
+            System.err.println("=== SQL ERROR IN SchemeServlet.doPut ===");
+            e.printStackTrace();
+            getServletContext().log("Failed to update scheme: " + e.getMessage(), e);
+            JsonUtil.error(resp, 500, "SQL Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("=== UNEXPECTED ERROR IN SchemeServlet.doPut ===");
+            e.printStackTrace();
+            JsonUtil.error(resp, 500, "Unexpected Error: " + e.getMessage());
         }
     }
 
@@ -151,8 +170,14 @@ public class SchemeServlet extends HttpServlet {
                 JsonUtil.error(resp, 404, "Scheme not found");
             }
         } catch (SQLException e) {
-            getServletContext().log("Failed to deactivate scheme", e);
-            JsonUtil.error(resp, 500, "Internal server error");
+            System.err.println("=== SQL ERROR IN SchemeServlet.doDelete ===");
+            e.printStackTrace();
+            getServletContext().log("Failed to deactivate scheme: " + e.getMessage(), e);
+            JsonUtil.error(resp, 500, "SQL Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("=== UNEXPECTED ERROR IN SchemeServlet.doDelete ===");
+            e.printStackTrace();
+            JsonUtil.error(resp, 500, "Unexpected Error: " + e.getMessage());
         }
     }
 
