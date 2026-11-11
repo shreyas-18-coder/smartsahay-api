@@ -35,11 +35,17 @@ public class HealthServlet extends HttpServlet {
             rs.next();
             body.put("database", "UP");
             body.put("schemesCount", rs.getInt(1));
+            resp.setStatus(HttpServletResponse.SC_OK);
         } catch (SQLException e) {
-            getServletContext().log("Database health check failed", e);
-            resp.setStatus(503);
+            System.err.println("=== DATABASE HEALTH CHECK FAILED ===");
+            e.printStackTrace();
+
+            resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             body.put("status", "DEGRADED");
             body.put("database", "DOWN");
+            body.put("error", e.getMessage());
+            body.put("sqlState", e.getSQLState());
+            body.put("errorCode", e.getErrorCode());
         }
 
         resp.getWriter().write(gson.toJson(body));

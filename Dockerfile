@@ -1,29 +1,53 @@
-# ── Stage 1: Build the WAR file using Maven & Java 21 ──
-FROM maven:3.9-eclipse-temurin-21 AS build
-WORKDIR /app
+package com.smartsahay.servlet;
 
-# Copy pom.xml and download project dependencies first (for faster caching)
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+import com.google.gson.Gson;
+import com.smartsahay.util.DBConnection;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-# Copy your source code and build the .war package
-COPY src ./src
-RUN mvn clean package -DskipTests
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-# ── Stage 2: Run Tomcat 10 & Deploy the WAR ──
-FROM tomcat:10.1-jdk21-temurin
-WORKDIR /usr/local/tomcat
+@WebServlet("/api/health")
+public class HealthServlet extends HttpServlet {
 
-# Remove default Tomcat sample applications
-RUN rm -rf webapps/*
+    private final Gson gson = new Gson();
 
-# Copy the generated WAR from Stage 1 into Tomcat's webapps as ROOT.war
-# Naming it ROOT.war makes your endpoints accessible directly at /api/...
-# instead of having an extra /smartsahay/ prefix.
-COPY --from=build /app/target/*.war webapps/ROOT.war
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
 
-# Expose Tomcat's default port
-EXPOSE 8080
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status", "UP");
+        body.put("service", "SmartSahay API");
 
-# Start Tomcat
-CMD ["catalina.sh", "run"]
+        try (Connection con = DBConnection.getConnection();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM schemes")) {
+            rs.next();
+            body.put("database", "UP");
+            body.put("schemesCount", rs.getInt(1));
+            resp.setStatus(HttpServletResponse.SC_OK);
+        } catch (SQLException e) {
+            System.err.println("=== DATABASE HEALTH CHECK FAILED ===");
+            e.printStackTrace();
+
+            resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            body.put("status", "DEGRADED");
+            body.put("database", "DOWN");
+            body.put("error", e.getMessage());
+            body.put("sqlState", e.getSQLState());
+            body.put("errorCode", e.getErrorCode());
+        }
+
+        resp.getWriter().write(gson.toJson(body));
+    }
+}
