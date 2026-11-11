@@ -1,53 +1,25 @@
-package com.smartsahay.servlet;
+# ── Stage 1: Build WAR with Maven ──
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-import com.google.gson.Gson;
-import com.smartsahay.util.DBConnection;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+# ── Stage 2: Run Tomcat 10 ──
+FROM tomcat:10.1-jdk21-temurin
+WORKDIR /usr/local/tomcat
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.LinkedHashMap;
-import java.util.Map;
+# Remove default sample apps
+RUN rm -rf webapps/*
 
-@WebServlet("/api/health")
-public class HealthServlet extends HttpServlet {
+# Disable Tomcat server shutdown port to stop "Invalid shutdown command" warnings
+RUN sed -i 's/<Server port="8005" shutdown="SHUTDOWN">/<Server port="-1" shutdown="SHUTDOWN">/' conf/server.xml
 
-    private final Gson gson = new Gson();
+# Deploy application as ROOT.war
+COPY --from=build /app/target/*.war webapps/ROOT.war
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
+ENV PORT=8080
+EXPOSE 8080
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("status", "UP");
-        body.put("service", "SmartSahay API");
-
-        try (Connection con = DBConnection.getConnection();
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM schemes")) {
-            rs.next();
-            body.put("database", "UP");
-            body.put("schemesCount", rs.getInt(1));
-            resp.setStatus(HttpServletResponse.SC_OK);
-        } catch (SQLException e) {
-            System.err.println("=== DATABASE HEALTH CHECK FAILED ===");
-            e.printStackTrace();
-
-            resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-            body.put("status", "DEGRADED");
-            body.put("database", "DOWN");
-            body.put("error", e.getMessage());
-            body.put("sqlState", e.getSQLState());
-            body.put("errorCode", e.getErrorCode());
-        }
-
-        resp.getWriter().write(gson.toJson(body));
-    }
-}
+CMD ["catalina.sh", "run"]
